@@ -5,7 +5,7 @@ from datetime import datetime
 from database import db
 from models import EmergencyTrip, LocationUpdate, HospitalAcknowledgement, Notification
 
-_async_mode = 'eventlet' if os.environ.get('FLASK_ENV') == 'production' else 'threading'
+_async_mode = 'gevent' if os.environ.get('FLASK_ENV') == 'production' else 'threading'
 socketio = SocketIO(cors_allowed_origins="*", async_mode=_async_mode)
 
 def init_sockets(app):
@@ -96,3 +96,4 @@ def on_update_location(data):
     if trip.hospital_id:
         emit('hospital_trip_update', payload, to=f"hospital_{trip.hospital_id}")
     emit('police_vehicle_moved', payload, to="police_command")
+
