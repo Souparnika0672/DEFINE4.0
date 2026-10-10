@@ -1,0 +1,92 @@
+﻿{% extends 'base.html' %}
+
+{% block title %}Police Traffic & Green-Wave Tactical Command — EmergencyPass{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-lg-4 py-3">
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-3">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-warning text-dark fw-bold">POLICE TRAFFIC CONTROL & ROAD CLEARANCE</span>
+                <span class="badge bg-danger">{{ active_trips|length }} Active Emergencies</span>
+            </div>
+            <h3 class="text-white mb-0 fw-bold">City Emergency Vehicle Corridor Surveillance</h3>
+        </div>
+        <div>
+            <a href="{{ url_for('police.audit_view') }}" class="btn btn-outline-cyan btn-sm">
+                📋 View Incident Audits & Reports
+            </a>
+        </div>
+    </div>
+
+    <!-- Active Traffic Clearance Requests -->
+    <div class="card-dark p-4 mb-3" style="border-left: 5px solid var(--warning-amber);">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="text-white mb-0 fw-bold">🚦 Live Traffic Clearance Requests ({{ active_trips|length }})</h5>
+            <span class="badge-demo">Road Clearance & Green-Wave Management</span>
+        </div>
+
+        <div class="row g-3">
+            {% for trip in active_trips %}
+            <div class="col-lg-6">
+                <div class="p-3 rounded card-interactive" style="background: var(--bg-surface-2); border: 1.5px solid var(--border-card);">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <span class="badge bg-danger mb-1">{{ trip.emergency_type }}</span>
+                            <h5 class="text-white mb-0 font-monospace fw-bold">{{ trip.vehicle.registration_number if trip.vehicle else 'Emergency Vehicle' }}</h5>
+                            <p class="text-muted small mb-1">Patient: <b class="text-white">{{ trip.patient_name }}</b> (📞 {{ trip.patient_phone }})</p>
+                            <p class="text-light small mb-1">➔ Heading to: <b class="text-info">{{ trip.destination_hospital.name if trip.destination_hospital else 'Nearest ER' }}</b></p>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-primary fs-6 mb-1">{{ trip.estimated_time_minutes }} min ETA</span>
+                            <div class="text-muted small fw-bold">{{ trip.distance_km }} km</div>
+                        </div>
+                    </div>
+
+                    <!-- Road Clearance Action Form -->
+                    <form action="{{ url_for('police.update_traffic_clearance', trip_id=trip.id) }}" method="POST" class="p-2 rounded mt-2" style="background: #0d192d; border: 1px solid #203554;">
+                        <label class="form-label small mb-1 text-light fw-bold">🚦 Traffic Police Action & Road Clearance:</label>
+                        <div class="row g-2 align-items-center">
+                            <div class="col-md-5">
+                                <select name="clearance_action" class="form-select form-select-sm form-select-dark">
+                                    <option value="corridor_cleared" {% if trip.police_clearance_status == 'corridor_cleared' %}selected{% endif %}>🟢 Clear Road / Green-Wave Active</option>
+                                    <option value="traffic_police_deployed" {% if trip.police_clearance_status == 'traffic_police_deployed' %}selected{% endif %}>🚔 Deploy Traffic Interceptors</option>
+                                    <option value="normal_traffic" {% if trip.police_clearance_status == 'normal_traffic' %}selected{% endif %}>⚠️ Normal Flow / Monitored</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <input type="text" name="police_notes" placeholder="e.g. Signal cleared at Junction 4" class="form-control form-control-sm form-control-dark" value="{{ trip.police_clearance_notes }}">
+                            </div>
+                            <div class="col-md-3 text-end">
+                                <button type="submit" class="btn btn-sm btn-primary-custom w-100 fw-bold">Send Update</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            {% else %}
+            <div class="col-12 text-center py-4 text-muted small">
+                No active traffic clearance requests at this moment.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Main Tactical Map -->
+    <div class="card-dark p-3">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="text-white mb-0 fw-bold">City-Wide Tactical Surveillance & Active Corridors Map</h6>
+            <span class="badge bg-secondary">Live GPS Feeds (Watermark-Free OSM)</span>
+        </div>
+        <div id="police-tactical-map" class="leaflet-map-container" style="height: 520px; border-radius: 8px; border: 1px solid var(--border-card);"></div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/police_dash.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    initPoliceDashboard();
+});
+</script>
+{% endblock %}

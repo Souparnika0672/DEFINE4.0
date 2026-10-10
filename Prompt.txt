@@ -1,0 +1,205 @@
+Build a complete, functional Python web application named "EmergencyPass — Smart Emergency Private Vehicle Assistance System".
+
+OBJECTIVE:
+EmergencyPass helps private vehicles transporting patients during medical emergencies find nearby hospitals, navigate to a selected hospital, notify authorised emergency response personnel, and alert relevant nearby road users. The primary purpose is to reduce avoidable delays and improve coordination between patients, hospitals, police, and nearby drivers.
+
+TECHNOLOGY STACK:
+- Python for backend logic.
+- Flask for the web application and REST APIs.
+- SQLite for development database storage, using SQLAlchemy.
+- HTML, CSS, JavaScript, and Bootstrap 5 for the frontend. Custom CSS should provide a polished, modern interface.
+- Leaflet.js with OpenStreetMap for interactive maps.
+- Browser Geolocation API for the user's current location, with permission.
+- OpenStreetMap Overpass API or another suitable free service to discover nearby hospitals.
+- OSRM public routing service for route geometry and estimated travel distance/time where available.
+- Use environment variables for configuration and secrets.
+- Use Socket.IO or polling for updating active trips and dashboards.
+- Use Flask-Login or an equivalent secure session-based authentication system.
+- Provide requirements.txt, database initialization, sample data, and a README with Windows setup instructions.
+
+USER ROLES AND ACCESS CONTROL:
+
+1. PUBLIC USER / VEHICLE OWNER
+- Register and log in using name, email, password, and vehicle details.
+- Register a vehicle registration number and vehicle type.
+- View verification status.
+- Access an emergency dashboard with a prominent, accessible SOS button.
+- Activate emergency mode when transporting a patient.
+- Give location permission and capture the current GPS position.
+- View nearby hospitals immediately after emergency activation.
+- Choose a hospital, view its location and route, and begin an emergency trip.
+- Cancel the trip or mark it complete.
+- View emergency status and notification delivery results.
+
+2. HOSPITAL PERSONNEL
+- Access a protected hospital dashboard.
+- View incoming emergency trips addressed to their hospital.
+- See vehicle registration number, last reported location, distance, estimated arrival time, activation time, and trip status when authorised.
+- Acknowledge or decline incoming notifications with an optional explanation.
+- Update arrival status and record patient arrival.
+- View only information relevant to their hospital and authorised responsibilities.
+
+3. POLICE / AUTHORISED EMERGENCY PERSONNEL
+- Access a separate, protected emergency response dashboard.
+- Monitor authorised active emergency trips.
+- View last known vehicle positions, selected hospitals, trip status, and alert delivery status.
+- Review suspicious use reports and relevant audit records.
+- Do not expose patient medical details unless explicitly necessary and legally authorised.
+
+4. ADMINISTRATOR
+- Manage user accounts, registered vehicles, hospitals, role assignments, and verification status.
+- Review reported misuse through an auditable process.
+- View system health, failed notifications, and audit logs.
+- Restrict access to administrative functions through role-based permissions.
+
+REGISTRATION AND SECURITY:
+- Hash passwords using a secure password-hashing library.
+- Validate all form inputs on the server.
+- Use CSRF protection and secure session configuration.
+- Enforce role-based authorisation on every protected backend endpoint, not merely by hiding frontend buttons.
+- Never allow users to assign themselves hospital, police, or administrator privileges.
+- Provide demonstration accounts with clearly documented sample credentials.
+- Never store passwords in plaintext.
+
+CORE EMERGENCY WORKFLOW:
+
+STEP 1: EMERGENCY ACTIVATION
+- Show a large red SOS / ACTIVATE EMERGENCY button.
+- Include a confirmation step to reduce accidental activations without introducing unnecessary delay.
+- On activation, obtain GPS coordinates with user permission.
+- Create a unique emergency trip ID.
+- Store activation time, current coordinates, vehicle ID, and trip status.
+- Begin location updates only during the active trip.
+- Clearly show GPS accuracy and the timestamp of the latest position.
+- If location access fails, allow manual location selection or retry, and explain the limitation.
+
+STEP 2: NEARBY HOSPITAL DISCOVERY
+- Automatically display three to four nearby hospitals based on the current location.
+- This hospital list is the most important feature and must appear immediately after emergency activation.
+- Display hospital name, address, straight-line distance, and road distance/estimated travel time when routing is available.
+- Show hospital markers on an interactive map.
+- Allow users to search for hospitals and select an alternative.
+- Calculate straight-line distance using the Haversine formula when routing is unavailable.
+- Do not invent hospital availability, bed capacity, emergency department status, or medical specialties.
+- Indicate when hospital information is incomplete or unavailable.
+- Provide retry and manual search options if the free hospital-data service fails.
+
+STEP 3: LIVE MAP AND NAVIGATION
+- Show the vehicle's current location and selected hospital on a Leaflet map.
+- Draw the available road route using OSRM.
+- Display distance and estimated travel time returned by the routing service.
+- Refresh the vehicle position periodically during active trips.
+- Update the map and ETA when new location data arrives.
+- Allow the destination hospital to be changed.
+- Clearly distinguish the last known location from a live position.
+- Handle API errors, GPS errors, and offline states gracefully.
+- Do not claim to provide official emergency traffic control or guaranteed fastest routes.
+
+STEP 4: NEARBY DRIVER ALERTS
+- Implement an in-application demonstration of emergency vehicle alerts.
+- Identify relevant nearby application users using recent locations and approximate route relevance, rather than notifying every user in a large fixed radius.
+- Show a prominent, clear alert such as: "Emergency vehicle approaching. Stay alert and give way only when safe."
+- Avoid encouraging dangerous manoeuvres or violations of traffic laws.
+- Include alert expiry, cancellation, duplicate prevention, and delivery status.
+- Provide a simulator showing how drivers without the app could receive alerts through a future authorised integration.
+- Clearly label simulated alerts. Do not claim that ordinary phones, vehicles, or navigation apps receive notifications unless an actual integration exists.
+
+STEP 5: HOSPITAL NOTIFICATIONS
+- When a hospital is selected, create an incoming emergency notification for that hospital within the application.
+- Include the trip ID, vehicle registration, last known location, estimated arrival time when available, and trip status.
+- Notify authorised hospital dashboard users through the implemented application infrastructure.
+- Display delivery, acknowledgement, and failure status.
+- Keep patient information minimal and protected.
+- If an external hospital integration is unavailable, explicitly label the notification as an internal demonstration rather than a real-world delivery.
+
+STEP 6: TRIP COMPLETION
+- Allow the user to cancel or complete the emergency trip.
+- Stop location tracking when the trip ends.
+- Expire active driver alerts and update the hospital and authorised response dashboards.
+- Record the completion or cancellation time.
+- Preserve only the records required by the configured retention policy.
+
+MISUSE REVIEW:
+- Allow authorised personnel to flag suspicious or repeated misuse.
+- Provide an incident review workflow with evidence, reviewer notes, and an audit trail.
+- Never automatically label an emergency as fake because the patient was not admitted or the condition was later assessed as non-critical.
+- Do not implement automatic fines, payment collection, or account restrictions without an explicitly authorised legal and administrative policy.
+- Provide a user explanation and appeal workflow if an authorised restriction is applied.
+
+USER INTERFACE AND DESIGN:
+Create a premium, professional emergency-response interface. Avoid a generic template appearance.
+
+Design language:
+- Deep navy blue, white, emergency red, and restrained cyan accents.
+- High contrast, clear typography, accessible button sizes, and responsive layouts.
+- Use clean cards, subtle shadows, consistent spacing, and simple icons.
+- Prioritise speed, readability, and usability during stressful emergencies.
+- Do not use excessive animations, decorative clutter, or unnecessary steps.
+
+Required pages:
+1. Landing page explaining EmergencyPass.
+2. Registration and login.
+3. Public user dashboard.
+4. Vehicle registration and verification page.
+5. Emergency activation and nearby hospital selection page.
+6. Live map and navigation page.
+7. Hospital staff dashboard.
+8. Police / emergency response dashboard.
+9. Administrator dashboard.
+10. Notifications and incident review page.
+11. Privacy policy, terms, and account settings.
+
+The emergency page should prioritise this sequence:
+SOS button → current location → nearby hospital list → select hospital → route and ETA → notifications and trip status.
+
+DATABASE:
+Create suitable relational models and relationships for:
+- User
+- Role
+- Vehicle
+- VehicleVerification
+- Hospital
+- EmergencyTrip
+- LocationUpdate
+- Notification
+- HospitalAcknowledgement
+- IncidentReport
+- AuditLog
+
+Use timestamps, foreign keys, indexes where appropriate, and server-side validation. Do not save continuous location history indefinitely.
+
+DEMO MODE:
+- Include realistic sample hospitals, registered vehicles, and authorised personnel.
+- Allow a user to simulate an emergency even when external services are unavailable.
+- Include a simulated trip with moving vehicle markers, changing ETA, hospital notifications, nearby driver alerts, and trip completion.
+- Clearly label every simulated vehicle movement, notification, hospital response, and sample record.
+- Include a visible indicator distinguishing real data from demonstration data.
+- Never represent sample data as verified real-world information.
+
+ERROR HANDLING:
+- Handle unavailable internet connections and API rate limits.
+- Handle location permission denial, inaccurate GPS, and stale coordinates.
+- Handle hospital search failures, routing failures, and notification failures.
+- Display useful user-facing messages instead of crashing.
+- Prevent duplicate emergency trips and duplicate notifications.
+- Never show stale coordinates or ETAs as current.
+- Provide sensible fallback behaviour when external services fail.
+
+PROJECT STRUCTURE:
+Organise the code into a clean, maintainable structure with separate modules for configuration, database models, authentication, role-based access control, emergency trips, hospital discovery, routing, notifications, and administration. Keep templates, static assets, tests, and documentation separate.
+
+DELIVERABLES:
+- Generate the actual working application, not just a mockup or a written plan.
+- Create all required Python files, HTML templates, CSS, JavaScript, database models, and configuration files.
+- Implement the complete main emergency workflow from activation to hospital discovery and trip completion.
+- Implement role-based login and separate dashboards.
+- Add sample data and a database initialization script.
+- Add basic automated tests for authentication, access control, trip creation, hospital discovery fallback, and trip completion.
+- Create requirements.txt and a README explaining installation and execution on Windows PowerShell.
+- Run the application and fix errors where the environment permits.
+- Provide clear instructions for starting the application and accessing each dashboard.
+
+IMPORTANT REAL-WORLD LIMITATIONS:
+EmergencyPass is a coordination prototype, not an official emergency dispatch service. Free public map services may have usage limits and are not guaranteed for production use. Do not promise hospital acceptance, ambulance services, guaranteed travel times, priority at traffic signals, or automatic police enforcement. Real hospital notifications and wider driver alerts require authorised integrations, agreements, and appropriate infrastructure. Protect location data, use consent, and clearly identify all simulated functionality.
+
+Begin by inspecting the project folder and existing files. Reuse and repair existing code where practical instead of overwriting a working project. Then implement the application in stages, run it, test the main workflow, and fix errors. Prioritise a functional emergency activation flow and nearby hospital discovery before secondary features.

@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block title %}Register Vehicle & Citizen Account — EmergencyPass{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-xl-7">
+            <div class="card-dark p-4 p-md-5">
+                <div class="text-center mb-4">
+                    <span class="badge bg-danger mb-2">NEW CITIZEN REGISTRATION</span>
+                    <h2 class="text-white mb-1">Register for EmergencyPass</h2>
+                    <p class="text-muted small">Create an account and register your primary vehicle for rapid emergency dispatch.</p>
+                </div>
+
+                <form method="POST" action="{{ url_for('auth.register') }}">
+                    <h5 class="text-info text-uppercase small fw-bold mb-3">1. Personal Information</h5>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label">Full Name *</label>
+                            <input type="text" name="name" class="form-control form-control-dark" placeholder="e.g. John Doe" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Phone Number *</label>
+                            <input type="tel" name="phone" class="form-control form-control-dark" placeholder="e.g. +91 98765 43210" required>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Email Address *</label>
+                            <input type="email" name="email" class="form-control form-control-dark" placeholder="e.g. john@example.com" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Password *</label>
+                            <input type="password" name="password" class="form-control form-control-dark" placeholder="At least 6 characters" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Confirm Password *</label>
+                            <input type="password" name="confirm_password" class="form-control form-control-dark" placeholder="Re-enter password" required>
+                        </div>
+                    </div>
+
+                    <h5 class="text-info text-uppercase small fw-bold mb-3">2. Primary Emergency Vehicle</h5>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label">Vehicle Registration Number *</label>
+                            <input type="text" name="reg_number" class="form-control form-control-dark font-monospace" placeholder="e.g. KL-07-CC-4099" style="text-transform: uppercase;" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Vehicle Type *</label>
+                            <select name="vehicle_type" class="form-select form-select-dark">
+                                <option value="Car">Car (Sedan / Hatchback)</option>
+                                <option value="SUV" selected>SUV / MUV</option>
+                                <option value="Van">Van / Microbus</option>
+                                <option value="Motorcycle">Two-Wheeler / Motorcycle</option>
+                                <option value="Private Ambulance">Private Patient Transport Vehicle</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Make & Model *</label>
+                            <input type="text" name="make_model" class="form-control form-control-dark" placeholder="e.g. Toyota Innova Crysta" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Vehicle Color *</label>
+                            <input type="text" name="color" class="form-control form-control-dark" placeholder="e.g. Pearl White" required>
+                        </div>
+                    </div>
+
+                    <div class="p-3 mb-4 rounded" style="background: var(--bg-surface-2); border: 1px solid var(--border-card);">
+                        <div class="d-flex align-items-center gap-2 text-white small mb-1">
+                            <span style="color: var(--accent-cyan);">🛡️</span> <b>Privacy & Verification Notice</b>
+                        </div>
+                        <p class="text-muted small mb-0">
+                            Vehicle details are shared exclusively with destination hospital ER desks and authorized traffic units during active emergency SOS transits.
+                        </p>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary-custom w-100 py-2 fs-6 mb-3">Complete Registration & Activate Console</button>
+                    
+                    <div class="text-center">
+                        <span class="text-muted small">Already registered?</span> 
+                        <a href="{{ url_for('auth.login') }}" class="fw-bold ms-1" style="color: var(--accent-cyan);">Sign In</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

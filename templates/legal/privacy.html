@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block title %}Privacy Policy & Data Retention — EmergencyPass{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+            <div class="card-dark p-4 p-md-5">
+                <h2 class="text-white mb-2">Privacy & Location Data Policy</h2>
+                <p class="text-muted small mb-4">Last updated: October 2026</p>
+
+                <h5 class="text-white mt-4 mb-2">1. Location Tracking Consent & Activation</h5>
+                <p class="text-muted small">EmergencyPass captures GPS coordinates strictly upon explicit user activation of an Emergency SOS transit. Location tracking terminates immediately when the trip is marked completed or cancelled by the user or hospital personnel.</p>
+
+                <h5 class="text-white mt-4 mb-2">2. Data Minimization & Retention</h5>
+                <p class="text-muted small">We do not retain continuous high-frequency location points indefinitely. Telemetry updates are automatically expunged after 24 hours. Only trip-level audit records (timestamps, start/end status, destination hospital) are preserved for safety and audit compliance.</p>
+
+                <h5 class="text-white mt-4 mb-2">3. Role-Based Access Control</h5>
+                <p class="text-muted small">Patient and vehicle live telemetry is disclosed only to verified receiving hospital triage desks, authorized police tactical responders, and the operating driver.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

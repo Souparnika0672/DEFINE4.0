@@ -1,0 +1,207 @@
+﻿{% extends 'base.html' %}
+{% block title %}Activate Emergency Mode — Pan-India EmergencyPass{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+            
+            <!-- Header Banner -->
+            <div class="card-dark p-4 text-center border-danger mb-4 shadow-lg position-relative overflow-hidden">
+                <div class="pulse-danger position-absolute" style="top: -20px; right: -20px; width: 80px; height: 80px; border-radius: 50%; background: rgba(239, 68, 68, 0.2);"></div>
+                <div class="badge bg-danger p-2 fs-6 mb-2">CRITICAL EMERGENCY PASS INITIALIZATION (PAN-INDIA 🇮🇳)</div>
+                <h2 class="text-white fw-bold mb-2">Declare Transit Emergency & Match Hospitals</h2>
+                <p class="text-muted mb-0">
+                    Dispatches road safety corridor alerts, requests police traffic clearance, and alerts specialized hospital emergency receiving teams across India.
+                </p>
+            </div>
+
+            <!-- Emergency Form -->
+            <div class="card-dark p-4">
+                <form action="{{ url_for('emergency.start_emergency') }}" method="POST" id="emergencyForm">
+                    <!-- GPS Coordinates Hidden Inputs -->
+                    <input type="hidden" name="latitude" id="input-lat" value="28.5672">
+                    <input type="hidden" name="longitude" id="input-lng" value="77.2100">
+                    <input type="hidden" name="accuracy" id="input-acc" value="10.0">
+
+                    <!-- GPS Status Card & City Presets -->
+                    <div class="p-3 rounded mb-4" style="background: var(--bg-surface-2); border: 1.5px solid var(--border-card);">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="pulse-danger" style="width: 14px; height: 14px; border-radius: 50%; background: #ef4444;"></div>
+                                <div>
+                                    <div class="text-white fw-bold">Starting Location & GPS Anchor: <span id="location-name" class="text-warning">Delhi NCR (Default / Pan-India)</span></div>
+                                    <div class="text-muted small">Lat: <span id="display-lat" class="font-monospace text-info">28.56720</span> | Lng: <span id="display-lng" class="font-monospace text-info">77.21000</span> (<span id="display-acc">Acquiring...</span>)</div>
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <span id="gps-badge" class="badge bg-success">GPS Ready</span>
+                                <button type="button" onclick="acquireGPS()" class="btn btn-sm btn-outline-info">📍 Use My Device GPS</button>
+                            </div>
+                        </div>
+
+                        <!-- Quick Indian City Presets -->
+                        <div class="pt-2 border-top border-secondary">
+                            <div class="d-flex align-items-center gap-2 overflow-auto py-1" style="white-space: nowrap; scrollbar-width: thin;">
+                                <span class="text-muted small fw-bold">📍 Quick Presets:</span>
+                                <button type="button" onclick="setPresetLocation(28.5672, 77.2100, 'Delhi NCR / North India')" class="btn btn-xs btn-outline-light py-0 px-2 rounded-pill small">Delhi NCR</button>
+                                <button type="button" onclick="setPresetLocation(19.0760, 72.8777, 'Mumbai / Maharashtra')" class="btn btn-xs btn-outline-light py-0 px-2 rounded-pill small">Mumbai</button>
+                                <button type="button" onclick="setPresetLocation(12.9716, 77.5946, 'Bengaluru / Karnataka')" class="btn btn-xs btn-outline-light py-0 px-2 rounded-pill small">Bengaluru</button>
+                                <button type="button" onclick="setPresetLocation(13.0827, 80.2707, 'Chennai / Tamil Nadu')" class="btn btn-xs btn-outline-light py-0 px-2 rounded-pill small">Chennai</button>
+                                <button type="button" onclick="setPresetLocation(17.3850, 78.4867, 'Hyderabad / Telangana')" class="btn btn-xs btn-outline-light py-0 px-2 rounded-pill small">Hyderabad</button>
+                                <button type="button" onclick="setPresetLocation(22.5726, 88.3639, 'Kolkata / West Bengal')" class="btn btn-xs btn-outline-light py-0 px-2 rounded-pill small">Kolkata</button>
+                                <button type="button" onclick="setPresetLocation(9.9816, 76.2999, 'Kochi / Kerala')" class="btn btn-xs btn-outline-light py-0 px-2 rounded-pill small">Kochi / Kerala</button>
+                                <button type="button" onclick="setPresetLocation(18.5204, 73.8567, 'Pune / Maharashtra')" class="btn btn-xs btn-outline-light py-0 px-2 rounded-pill small">Pune</button>
+                                <button type="button" onclick="setPresetLocation(23.0225, 72.5714, 'Ahmedabad / Gujarat')" class="btn btn-xs btn-outline-light py-0 px-2 rounded-pill small">Ahmedabad</button>
+                                <button type="button" onclick="setPresetLocation(8.5241, 76.9295, 'Trivandrum / Kerala')" class="btn btn-xs btn-outline-light py-0 px-2 rounded-pill small">Trivandrum</button>
+                                <button type="button" onclick="setPresetLocation(30.7333, 76.7794, 'Chandigarh / Punjab')" class="btn btn-xs btn-outline-light py-0 px-2 rounded-pill small">Chandigarh</button>
+                                <button type="button" onclick="setPresetLocation(26.9124, 75.7873, 'Jaipur / Rajasthan')" class="btn btn-xs btn-outline-light py-0 px-2 rounded-pill small">Jaipur</button>
+                                <button type="button" onclick="setPresetLocation(26.8467, 80.9462, 'Lucknow / UP')" class="btn btn-xs btn-outline-light py-0 px-2 rounded-pill small">Lucknow</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 1: Emergency Type Selection -->
+                    <h5 class="text-white mb-3 fw-bold">1. Select Emergency Classification & Medical Need *</h5>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6 col-lg-4">
+                            <label class="d-block p-3 rounded card-interactive text-start h-100" style="background: var(--bg-surface-2); border: 1.5px solid var(--border-card); cursor: pointer;">
+                                <input type="radio" name="emergency_type" value="Cardiac Arrest / Acute Chest Pain" checked class="form-check-input me-2">
+                                <b class="text-white">❤️ Cardiac / Heart Attack</b>
+                                <p class="text-muted small mb-0 mt-1">Severe chest pain, suspected heart attack, cardiac arrest. (Matches Cath Labs & CCU).</p>
+                            </label>
+                        </div>
+                        <div class="col-md-6 col-lg-4">
+                            <label class="d-block p-3 rounded card-interactive text-start h-100" style="background: var(--bg-surface-2); border: 1.5px solid var(--border-card); cursor: pointer;">
+                                <input type="radio" name="emergency_type" value="Severe Trauma / Road Accident" class="form-check-input me-2">
+                                <b class="text-white">🚨 Severe Trauma / Accident</b>
+                                <p class="text-muted small mb-0 mt-1">Road accident, severe bleeding, fracture, physical injury. (Matches Level 1/2 Trauma Centers).</p>
+                            </label>
+                        </div>
+                        <div class="col-md-6 col-lg-4">
+                            <label class="d-block p-3 rounded card-interactive text-start h-100" style="background: var(--bg-surface-2); border: 1.5px solid var(--border-card); cursor: pointer;">
+                                <input type="radio" name="emergency_type" value="Acute Stroke / Neurological" class="form-check-input me-2">
+                                <b class="text-white">🧠 Stroke / Neurological</b>
+                                <p class="text-muted small mb-0 mt-1">Facial droop, paralysis, speech loss, seizures. (Matches Comprehensive Stroke Units).</p>
+                            </label>
+                        </div>
+                        <div class="col-md-6 col-lg-4">
+                            <label class="d-block p-3 rounded card-interactive text-start h-100" style="background: var(--bg-surface-2); border: 1.5px solid var(--border-card); cursor: pointer;">
+                                <input type="radio" name="emergency_type" value="Obstetric / Pregnancy / Delivery" class="form-check-input me-2">
+                                <b class="text-white">🤰 Maternity / Labor / Delivery</b>
+                                <p class="text-muted small mb-0 mt-1">Active labor pain, water break, pregnancy distress. (Matches 24/7 Maternity & NICU).</p>
+                            </label>
+                        </div>
+                        <div class="col-md-6 col-lg-4">
+                            <label class="d-block p-3 rounded card-interactive text-start h-100" style="background: var(--bg-surface-2); border: 1.5px solid var(--border-card); cursor: pointer;">
+                                <input type="radio" name="emergency_type" value="Pediatric Emergency / Child ICU" class="form-check-input me-2">
+                                <b class="text-white">👶 Pediatric / Child Emergency</b>
+                                <p class="text-muted small mb-0 mt-1">Infant respiratory distress, child trauma, high fever seizure. (Matches Pediatric ICUs).</p>
+                            </label>
+                        </div>
+                        <div class="col-md-6 col-lg-4">
+                            <label class="d-block p-3 rounded card-interactive text-start h-100" style="background: var(--bg-surface-2); border: 1.5px solid var(--border-card); cursor: pointer;">
+                                <input type="radio" name="emergency_type" value="General Critical Medical Emergency" class="form-check-input me-2">
+                                <b class="text-white">🏥 General Acute Emergency</b>
+                                <p class="text-muted small mb-0 mt-1">Breathing distress, unconsciousness, poisoning, burns. (Matches Multi-Specialty ERs).</p>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Severity & Patient Details -->
+                    <h5 class="text-white mb-3 fw-bold">2. Severity & Vehicle Configuration</h5>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label text-light">Patient Severity Level *</label>
+                            <select name="severity_level" class="form-select form-select-dark">
+                                <option value="Critical Immediate (Code Red)" selected>Critical Immediate (Code Red - Immediate Resuscitation)</option>
+                                <option value="High Urgent (Code Yellow)">High Urgent (Code Yellow - Acute Distress)</option>
+                                <option value="Moderate (Code Green)">Moderate (Code Green - Urgent Stable Transit)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-light">Contact / Caller Phone *</label>
+                            <input type="tel" name="patient_phone" class="form-control form-control-dark" placeholder="e.g. +91 98470 12345" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-light">Patient Name (Optional)</label>
+                            <input type="text" name="patient_name" class="form-control form-control-dark" placeholder="e.g. Alex Mercer">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-light">Transit Vehicle (If registered)</label>
+                            <select name="vehicle_id" class="form-select form-select-dark">
+                                {% for v in vehicles %}
+                                    <option value="{{ v.id }}">{{ v.registration_number }} ({{ v.make_model }})</option>
+                                {% else %}
+                                    <option value="">Standard Private Vehicle</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label text-light">Additional Symptoms / Clinical Notes</label>
+                            <input type="text" name="patient_notes" class="form-control form-control-dark" placeholder="e.g. Severe retrosternal chest pain radiating to left arm, sweating, conscious">
+                        </div>
+                    </div>
+
+                    <div class="form-check form-switch p-2 rounded mb-4" style="background: var(--bg-surface-2); border: 1px solid var(--border-card);">
+                        <input class="form-check-input ms-0 me-2" type="checkbox" name="is_simulated" value="true" id="simCheck" checked>
+                        <label class="form-check-label text-white small" for="simCheck">
+                            <b>Enable Demonstration Simulation Mode</b> (Simulates vehicle road movement, corridor clearance & agency alerts)
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn btn-danger-custom btn-lg w-100 py-3 fs-5 shadow-lg fw-bold">
+                        🚨 FIND TAILORED EMERGENCY HOSPITALS ACROSS INDIA ➔
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function setPresetLocation(lat, lng, name) {
+    document.getElementById('input-lat').value = lat;
+    document.getElementById('input-lng').value = lng;
+    document.getElementById('display-lat').innerText = lat.toFixed(5);
+    document.getElementById('display-lng').innerText = lng.toFixed(5);
+    document.getElementById('display-acc').innerText = 'Preset City Hub';
+    document.getElementById('location-name').innerText = name;
+    const badge = document.getElementById('gps-badge');
+    badge.className = 'badge bg-info text-dark';
+    badge.innerText = name.split('/')[0].trim() + ' Active';
+}
+
+function acquireGPS() {
+    if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+                const acc = pos.coords.accuracy;
+
+                document.getElementById('input-lat').value = lat;
+                document.getElementById('input-lng').value = lng;
+                document.getElementById('input-acc').value = acc;
+
+                document.getElementById('display-lat').innerText = lat.toFixed(5);
+                document.getElementById('display-lng').innerText = lng.toFixed(5);
+                document.getElementById('display-acc').innerText = `±${Math.round(acc)}m (Live Device GPS)`;
+                document.getElementById('location-name').innerText = 'Live Device GPS Acquired';
+
+                const badge = document.getElementById('gps-badge');
+                badge.className = 'badge bg-success';
+                badge.innerText = 'Live GPS Locked ✓';
+            },
+            (err) => {
+                const badge = document.getElementById('gps-badge');
+                badge.className = 'badge bg-secondary';
+                badge.innerText = 'Preset Applied';
+            },
+            { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+        );
+    }
+}
+document.addEventListener('DOMContentLoaded', acquireGPS);
+</script>
+{% endblock %}

@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Users & Roles — EmergencyPass{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="text-white mb-0">User Accounts & Role Assignments</h3>
+        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-sm btn-outline-light">← Back to Overview</a>
+    </div>
+
+    <div class="card-dark p-4">
+        <div class="table-responsive">
+            <table class="table table-dark-custom">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Linked Hospital</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in users %}
+                    <tr>
+                        <td>#{{ u.id }}</td>
+                        <td><b>{{ u.name }}</b></td>
+                        <td>{{ u.email }}</td>
+                        <td>
+                            <span class="badge bg-{{ 'danger' if u.role.name == 'admin' else ('info text-dark' if u.role.name == 'hospital' else ('warning text-dark' if u.role.name == 'police' else 'secondary')) }}">
+                                {{ u.role.name|upper }}
+                            </span>
+                        </td>
+                        <td class="small">{{ u.hospital.name if u.hospital else '—' }}</td>
+                        <td>
+                            <form action="{{ url_for('admin.update_user_role', user_id=u.id) }}" method="POST" class="d-flex gap-2">
+                                <select name="role_id" class="form-select form-select-sm form-select-dark" style="width: 120px;">
+                                    {% for r in roles %}
+                                        <option value="{{ r.id }}" {% if u.role_id == r.id %}selected{% endif %}>{{ r.name|capitalize }}</option>
+                                    {% endfor %}
+                                </select>
+                                <select name="hospital_id" class="form-select form-select-sm form-select-dark" style="width: 140px;">
+                                    <option value="">No Hospital</option>
+                                    {% for h in hospitals %}
+                                        <option value="{{ h.id }}" {% if u.hospital_id == h.id %}selected{% endif %}>{{ h.name[:18] }}...</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" class="btn btn-sm btn-outline-cyan">Save</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+
+{% block title %}EmergencyPass — Smart Emergency Private Vehicle Assistance System{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Hero Section -->
+    <div class="row align-items-center g-5 py-4">
+        <div class="col-lg-7">
+            <div class="d-inline-flex align-items-center gap-2 px-3 py-1 mb-3 rounded-pill" style="background: var(--bg-surface-2); border: 1px solid var(--border-active);">
+                <span style="color: var(--accent-cyan); font-size: 0.85rem; font-weight: 600;">⚡ SMART EMERGENCY RESPONSE PROTOCOL</span>
+            </div>
+            <h1 class="display-4 fw-extrabold text-white mb-3" style="line-height: 1.15;">
+                Every Second Counts in <span style="color: var(--emergency-red); text-shadow: 0 0 20px rgba(230,57,70,0.5);">Medical Emergencies</span>.
+            </h1>
+            <p class="lead text-muted mb-4">
+                EmergencyPass bridges the critical gap when transporting patients in private vehicles. Instant hospital discovery, real-time hospital triage notification, tactical police visibility, and safe driver vicinity alerts.
+            </p>
+
+            <div class="d-flex flex-wrap gap-3">
+                {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('emergency.activate') }}" class="btn btn-danger-custom btn-lg px-4 shadow-lg">
+                        🚨 Launch Emergency Mode
+                    </a>
+                    <a href="{{ url_for('user.dashboard') }}" class="btn btn-outline-cyan btn-lg px-4">
+                        Driver Dashboard
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-danger-custom btn-lg px-4 shadow-lg">
+                        🚨 Quick Demo Access
+                    </a>
+                    <a href="{{ url_for('auth.register') }}" class="btn btn-outline-cyan btn-lg px-4">
+                        Register Your Vehicle
+                    </a>
+                {% endif %}
+            </div>
+
+            <!-- Quick Metrics -->
+            <div class="row g-3 mt-4 pt-2">
+                <div class="col-6 col-md-3">
+                    <div class="metric-box">
+                        <div class="metric-value" style="color: var(--accent-cyan);">{{ stats.total_hospitals }}</div>
+                        <div class="metric-label">Registered ERs</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="metric-box">
+                        <div class="metric-value" style="color: var(--emergency-red);">{{ stats.active_trips }}</div>
+                        <div class="metric-label">Active Transits</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="metric-box">
+                        <div class="metric-value" style="color: var(--success-green);">{{ stats.registered_vehicles }}</div>
+                        <div class="metric-label">Vehicles</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="metric-box">
+                        <div class="metric-value">{{ stats.completed_trips }}</div>
+                        <div class="metric-label">Safe Arrivals</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Visual SOS Launcher Card -->
+        <div class="col-lg-5">
+            <div class="card-dark p-4 text-center" style="border: 2px solid rgba(230,57,70,0.3); background: radial-gradient(circle at top, #1a0b12 0%, var(--bg-surface-1) 80%);">
+                <div class="badge-emergency mb-3 d-inline-block">RAPID ACTIVATION PORTAL</div>
+                <h3 class="text-white mb-2">Emergency Vehicle Assistance</h3>
+                <p class="text-muted small">Tap the SOS trigger below to acquire your precise GPS location and discover verified emergency trauma centers immediately.</p>
+                
+                <div class="sos-button-container">
+                    <a href="{{ url_for('emergency.activate') }}" class="btn-sos text-decoration-none">
+                        <span>SOS</span>
+                        <span class="sub">ACTIVATE</span>
+                    </a>
+                </div>
+
+                <div class="p-3 rounded text-start" style="background: var(--bg-surface-2); border: 1px solid var(--border-color);">
+                    <div class="d-flex align-items-center gap-2 text-white small mb-1">
+                        <span style="color: var(--success-green);">✓</span> <b>Instant Hospital Discovery</b> (Haversine & OSRM)
+                    </div>
+                    <div class="d-flex align-items-center gap-2 text-white small mb-1">
+                        <span style="color: var(--success-green);">✓</span> <b>Hospital Pre-Arrival Notification</b>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 text-white small">
+                        <span style="color: var(--success-green);">✓</span> <b>Nearby Driver Vicinity Warning</b>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Core 4 Pillars / Features -->
+    <div class="py-5">
+        <div class="text-center mb-5">
+            <h2 class="display-6 text-white mb-2">End-to-End Emergency Coordination</h2>
+            <p class="text-muted">A multi-stakeholder ecosystem uniting citizens, hospitals, and traffic authorities.</p>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-3">
+                <div class="card-dark card-interactive h-100 p-4">
+                    <div style="font-size: 2.2rem; margin-bottom: 1rem;">🚑</div>
+                    <h5 class="text-white mb-2">1. Private Vehicle Owner</h5>
+                    <p class="text-muted small">One-tap SOS activation, GPS coordinate broadcast, live turn-by-turn routing with OSRM, and real-time hospital triage updates.</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card-dark card-interactive h-100 p-4">
+                    <div style="font-size: 2.2rem; margin-bottom: 1rem;">🏥</div>
+                    <h5 class="text-white mb-2">2. Hospital ER Desk</h5>
+                    <p class="text-muted small">Live incoming patient transit queue, estimated arrival time countdown, trauma priority level, and 1-click ER bay preparation.</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card-dark card-interactive h-100 p-4">
+                    <div style="font-size: 2.2rem; margin-bottom: 1rem;">👮</div>
+                    <h5 class="text-white mb-2">3. Police & Traffic Unit</h5>
+                    <p class="text-muted small">Tactical city-wide map surveillance of active emergency vehicles, route corridor monitoring, and misuse auditing workflow.</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card-dark card-interactive h-100 p-4">
+                    <div style="font-size: 2.2rem; margin-bottom: 1rem;">🚗</div>
+                    <h5 class="text-white mb-2">4. Road Vicinity Alert</h5>
+                    <p class="text-muted small">Demonstration alert system notifying road users in the corridor to stay alert, yield the fast lane, and give way safely.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Demo Accounts Quick Reference -->
+    <div class="card-dark p-4 mt-4" style="border: 1px solid var(--border-active); background: var(--bg-surface-2);">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h4 class="text-white mb-1">Explore Demonstration Roles & Simulated Trips</h4>
+                <p class="text-muted small mb-0">Pre-configured test accounts are available for instant evaluation of Driver, Hospital, Police, and Administrator workflows.</p>
+            </div>
+            <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+                <a href="{{ url_for('auth.login') }}" class="btn btn-outline-cyan">View Demo Accounts</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

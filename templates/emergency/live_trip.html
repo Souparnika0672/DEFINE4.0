@@ -1,0 +1,268 @@
+﻿{% extends 'base.html' %}
+{% block title %}Emergency Transit in Progress — EmergencyPass{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-lg-4 py-3">
+    
+    <!-- Top Active Emergency Status Bar -->
+    <div class="card-dark p-3 mb-3 border-danger shadow-lg">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-3">
+                <div class="pulse-danger" style="width: 18px; height: 18px; border-radius: 50%; background: #ef4444;"></div>
+                <div>
+                    <div class="d-flex align-items-center gap-2">
+                        <h4 class="text-white fw-bold mb-0">🚨 ACTIVE EMERGENCY TRANSIT</h4>
+                        <span class="badge bg-danger">{{ trip.id }}</span>
+                        <span class="badge bg-warning text-dark">{{ trip.severity_level }}</span>
+                    </div>
+                    <div class="text-muted small">
+                        Patient: <b class="text-white">{{ trip.patient_name }}</b> | Need: <b class="text-info">{{ trip.emergency_type }}</b>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Controls -->
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <button type="button" id="siren-toggle-btn" onclick="toggleSirenAudio()" class="btn btn-sm btn-outline-warning">
+                    🔊 Siren: OFF
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#changeHospitalModal">
+                    🔄 Re-Route Hospital
+                </button>
+                <form action="{{ url_for('emergency.complete_trip', trip_id=trip.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Confirm patient arrival at hospital ER?');">
+                    <button type="submit" class="btn btn-sm btn-success-custom">
+                        ✓ Patient Arrived (Complete)
+                    </button>
+                </form>
+                <form action="{{ url_for('emergency.cancel_trip', trip_id=trip.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to cancel this emergency pass?');">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                        ✕ Cancel Pass
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Multi-Agency Telemetry Grid -->
+    <div class="row g-3 mb-3">
+        <!-- Telemetry Card 1: ETA & Distance -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card-dark p-3 h-100 border-start border-4 border-danger">
+                <div class="text-muted small text-uppercase fw-bold">Live Estimated ETA</div>
+                <div class="d-flex align-items-baseline gap-2 mt-1">
+                    <span id="trip-eta" class="display-6 fw-bold text-danger">{{ trip.estimated_time_minutes|round(1) }}</span>
+                    <span class="text-muted fw-bold">mins</span>
+                </div>
+                <div class="text-muted small">Distance: <span id="trip-dist" class="text-white fw-bold">{{ trip.distance_km|round(2) }} km</span></div>
+            </div>
+        </div>
+
+        <!-- Telemetry Card 2: Police Traffic Corridor -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card-dark p-3 h-100 border-start border-4 border-info">
+                <div class="text-muted small text-uppercase fw-bold">Police Traffic Clearance</div>
+                <div class="mt-1">
+                    <span id="police-status-badge" class="badge bg-primary p-2 fs-6">
+                        {{ trip.police_clearance_status.replace('_', ' ').upper() }}
+                    </span>
+                </div>
+                <div id="police-notes" class="text-muted small mt-1 text-truncate">
+                    {{ trip.police_clearance_notes or 'Traffic corridor synchronized' }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Telemetry Card 3: Hospital ER Prep -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card-dark p-3 h-100 border-start border-4 border-success">
+                <div class="text-muted small text-uppercase fw-bold">Hospital ER Preparation</div>
+                <div class="mt-1">
+                    <span id="hospital-status-badge" class="badge bg-success p-2 fs-6">
+                        {{ trip.hospital_prep_status.replace('_', ' ').upper() }}
+                    </span>
+                </div>
+                <div id="hospital-notes" class="text-muted small mt-1 text-truncate">
+                    {{ trip.hospital_prep_notes or 'Trauma bay & specialists standing by' }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Telemetry Card 4: GPS Speed & Satellites -->
+        <div class="col-md-6 col-lg-3">
+            <div class="card-dark p-3 h-100 border-start border-4 border-warning">
+                <div class="text-muted small text-uppercase fw-bold">Vehicle Speed & Accuracy</div>
+                <div class="d-flex align-items-baseline gap-2 mt-1">
+                    <span id="vehicle-speed" class="display-6 fw-bold text-warning">0.0</span>
+                    <span class="text-muted fw-bold">km/h</span>
+                </div>
+                <div class="text-muted small">GPS Accuracy: <span id="gps-acc" class="text-white fw-bold">±{{ trip.accuracy_meters|round(0) }}m</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Demonstration Simulation Control Deck (Only for simulation mode) -->
+    {% if trip.is_simulated %}
+    <div class="card-dark p-3 mb-3" style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.9)); border: 1px dashed var(--accent-cyan);">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+                <span class="badge bg-info text-dark fw-bold me-2">DEMO SIMULATOR</span>
+                <span id="demo-status-text" class="text-white small fw-bold">Ready to simulate transit along OSRM road coordinates...</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <button type="button" onclick="startInteractiveDemo('{{ trip.id }}')" class="btn btn-sm btn-primary-custom">
+                    ▶ Play Simulation
+                </button>
+                <button type="button" onclick="pauseInteractiveDemo()" class="btn btn-sm btn-outline-light">
+                    ⏸ Pause
+                </button>
+                <div class="btn-group btn-group-sm">
+                    <button type="button" onclick="setDemoSpeed(1.0)" class="btn btn-outline-secondary">1x</button>
+                    <button type="button" onclick="setDemoSpeed(2.5)" class="btn btn-outline-secondary">2.5x</button>
+                    <button type="button" onclick="setDemoSpeed(5.0)" class="btn btn-outline-secondary">5x</button>
+                </div>
+                <span id="demo-speed-badge" class="badge bg-secondary">1x Speed</span>
+            </div>
+        </div>
+        <div class="progress mt-2" style="height: 8px; background: rgba(255,255,255,0.12); border-radius: 4px;">
+            <div id="demo-progress-bar" class="progress-bar bg-danger" role="progressbar" style="width: 0%;"></div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Navigation Map and Right Side Corridor Feed -->
+    <div class="row g-3">
+        <!-- Leaflet Map -->
+        <div class="col-lg-8">
+            <div class="card-dark p-3 h-100">
+                <div id="navigation-map" class="leaflet-map-container" style="height: 560px; border-radius: 8px; border: 1px solid var(--border-card);"></div>
+            </div>
+        </div>
+
+        <!-- Right Side Panel -->
+        <div class="col-lg-4">
+            <div class="d-flex flex-column gap-3 h-100">
+                
+                <!-- Destination Hospital ER Info -->
+                <div class="card-dark p-3">
+                    <h6 class="text-info text-uppercase small fw-bold mb-2">🏥 Receiving Emergency Facility</h6>
+                    <h5 class="text-white mb-1 fw-bold">{{ trip.destination_hospital.name if trip.destination_hospital else 'Medical Center' }}</h5>
+                    <p class="text-muted small mb-2">📍 {{ trip.destination_hospital.address if trip.destination_hospital else '' }}</p>
+                    <p class="text-light small mb-2">📞 Desk Phone: <a href="tel:{{ trip.destination_hospital.phone }}" class="text-info fw-bold">{{ trip.destination_hospital.phone }}</a></p>
+                    <p class="text-warning small mb-0">⭐ Specialty: {{ trip.destination_hospital.emergency_type if trip.destination_hospital else 'Trauma Care' }}</p>
+                </div>
+
+                <!-- Driver Vicinity Alert Feed -->
+                <div class="card-dark p-3 flex-grow-1">
+                    <h6 class="text-warning text-uppercase small fw-bold mb-2">📡 Road Vicinity Alert Broadcast</h6>
+                    <p class="text-muted small mb-3">
+                        Real-time safety broadcasts are active for road users within the ~3 km corridor.
+                    </p>
+
+                    <div class="p-3 rounded mb-3" style="background: var(--bg-surface-2); border: 1px solid var(--border-card);">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <span class="badge bg-danger">CORRIDOR ALERT</span>
+                            <small class="text-white fw-bold">Emergency Vehicle Approaching</small>
+                        </div>
+                        <p class="text-muted small mb-0">
+                            "Stay alert, yield the fast lane, and give way only when safe."
+                        </p>
+                    </div>
+
+                    <div class="small text-muted">
+                        <div>🛣️ Routing Engine: <b class="text-white">{{ route_info.service if route_info else 'OSRM Public API' }}</b></div>
+                        <div>🚔 Corridor Clearance: <b class="text-white">{{ trip.police_clearance_status.replace('_', ' ').upper() }}</b></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Change Hospital Modal -->
+<div class="modal fade" id="changeHospitalModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content card-dark">
+            <div class="modal-header border-bottom border-secondary">
+                <h5 class="modal-title text-white">Select Alternative Hospital</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('emergency.change_hospital', trip_id=trip.id) }}" method="POST">
+                <div class="modal-body">
+                    <label class="form-label text-light">Choose Destination Hospital</label>
+                    <select name="new_hospital_id" class="form-select form-select-dark mb-3" required>
+                        {% for ah in alt_hospitals %}
+                            <option value="{{ ah.id }}">{{ ah.name }} ({{ ah.city }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="modal-footer border-top border-secondary">
+                    <button type="button" class="btn btn-outline-light btn-sm" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary-custom btn-sm">Update Destination</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/live_trip.js') }}"></script>
+<script src="{{ url_for('static', filename='js/demo_runner.js') }}"></script>
+<script>
+const originLat = {{ trip.current_lat }};
+const originLng = {{ trip.current_lng }};
+const destLat = {{ trip.destination_lat or (trip.current_lat + 0.03) }};
+const destLng = {{ trip.destination_lng or (trip.current_lng + 0.04) }};
+const routeCoords = {{ (route_info.coordinates if route_info else [])|tojson }};
+
+let sirenAudioContext = null;
+let sirenInterval = null;
+let sirenActive = false;
+
+function toggleSirenAudio() {
+    sirenActive = !sirenActive;
+    const btn = document.getElementById('siren-toggle-btn');
+    if (sirenActive) {
+        btn.className = 'btn btn-sm btn-warning fw-bold';
+        btn.innerText = '🔊 Siren: ON';
+        startSirenSynth();
+    } else {
+        btn.className = 'btn btn-sm btn-outline-warning';
+        btn.innerText = '🔊 Siren: OFF';
+        stopSirenSynth();
+    }
+}
+
+function startSirenSynth() {
+    try {
+        sirenAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+        let toneToggle = false;
+        sirenInterval = setInterval(() => {
+            if (!sirenActive) return;
+            const osc = sirenAudioContext.createOscillator();
+            const gain = sirenAudioContext.createGain();
+            osc.connect(gain);
+            gain.connect(sirenAudioContext.destination);
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(toneToggle ? 960 : 770, sirenAudioContext.currentTime);
+            gain.gain.setValueAtTime(0.15, sirenAudioContext.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, sirenAudioContext.currentTime + 0.35);
+            osc.start();
+            osc.stop(sirenAudioContext.currentTime + 0.35);
+            toneToggle = !toneToggle;
+        }, 400);
+    } catch (e) {}
+}
+
+function stopSirenSynth() {
+    if (sirenInterval) clearInterval(sirenInterval);
+    if (sirenAudioContext) {
+        try { sirenAudioContext.close(); } catch (e) {}
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    initLeafletMap('navigation-map', originLat, originLng, 13);
+    renderTripRoute(originLat, originLng, destLat, destLng, routeCoords);
+    setupLiveTripSync('{{ trip.id }}', {{ trip.hospital_id or 'null' }});
+});
+</script>
+{% endblock %}

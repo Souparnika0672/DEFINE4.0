@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+
+{% block title %}Administrator Control Center — EmergencyPass{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <span class="badge bg-danger mb-1">CENTRAL SUPERVISION</span>
+            <h2 class="text-white mb-0">Administrator Control Center</h2>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-primary-custom btn-sm" data-bs-toggle="modal" data-bs-target="#apiKeyModal">
+                🗺️ Configure OpenMaps API Key
+            </button>
+            <a href="{{ url_for('admin.users') }}" class="btn btn-outline-cyan btn-sm">Manage Users</a>
+            <a href="{{ url_for('admin.vehicles') }}" class="btn btn-outline-cyan btn-sm">Verify Vehicles</a>
+            <a href="{{ url_for('admin.hospitals') }}" class="btn btn-outline-cyan btn-sm">Hospital Registry</a>
+        </div>
+    </div>
+
+    <!-- API Key Status Alert -->
+    <div class="p-3 mb-4 rounded" style="background: var(--bg-surface-2); border: 1.5px solid var(--border-card);">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <b class="text-white">🗺️ OpenMaps & OpenStreetMap Routing Provider:</b>
+                <span class="badge bg-{{ 'success' if openmap_key else 'info text-dark' }} ms-2">
+                    {{ 'Authenticated OpenMaps API Key Active' if openmap_key else 'Public High-Availability OSRM Engine Active' }}
+                </span>
+                <p class="text-muted small mb-0 mt-1">
+                    Powered by OpenStreetMap data, OpenRouteService & OSRM for road geometry, travel distance, and ETA calculations.
+                </p>
+            </div>
+            <div>
+                <button type="button" class="btn btn-sm btn-outline-cyan" data-bs-toggle="modal" data-bs-target="#apiKeyModal">
+                    {{ 'Edit Key' if openmap_key else '+ Add API Key' }}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Metrics Row -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="metric-box">
+                <div class="metric-value text-info">{{ stats.total_users }}</div>
+                <div class="metric-label">Users</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="metric-box">
+                <div class="metric-value text-success">{{ stats.total_vehicles }}</div>
+                <div class="metric-label">Vehicles</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="metric-box">
+                <div class="metric-value" style="color: var(--accent-cyan);">{{ stats.total_hospitals }}</div>
+                <div class="metric-label">Hospitals</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="metric-box">
+                <div class="metric-value text-danger">{{ stats.active_emergencies }}</div>
+                <div class="metric-label">Active Transits</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="metric-box">
+                <div class="metric-value text-warning">{{ stats.pending_incidents }}</div>
+                <div class="metric-label">Flagged Misuse</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="metric-box">
+                <div class="metric-value">{{ stats.total_trips }}</div>
+                <div class="metric-label">Total Transits</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Emergencies and Audit Logs -->
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="card-dark p-4 h-100">
+                <h5 class="text-white mb-3">Recent Emergency Transits</h5>
+                {% if recent_trips %}
+                    <div class="table-responsive">
+                        <table class="table table-dark-custom small">
+                            <thead>
+                                <tr>
+                                    <th>Trip ID</th>
+                                    <th>Vehicle</th>
+                                    <th>Hospital</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for t in recent_trips %}
+                                <tr>
+                                    <td class="font-monospace text-info fw-bold">{{ t.id }}</td>
+                                    <td>{{ t.vehicle.registration_number }}</td>
+                                    <td>{{ t.destination_hospital.name if t.destination_hospital else 'Pending' }}</td>
+                                    <td><span class="badge bg-{{ 'danger' if t.status == 'active' else 'success' }}">{{ t.status }}</span></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted small">No emergency trips recorded yet.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card-dark p-4 h-100">
+                <h5 class="text-white mb-3">Recent Security & Activity Logs</h5>
+                <div class="table-responsive">
+                    <table class="table table-dark-custom small">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Action</th>
+                                <th>User</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for l in recent_logs %}
+                            <tr>
+                                <td class="text-dim">{{ l.timestamp.strftime('%H:%M:%S') if l.timestamp else '' }}</td>
+                                <td class="text-info font-monospace">{{ l.action }}</td>
+                                <td>{{ l.user.name if l.user else 'System' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- API Key Configuration Modal -->
+<div class="modal fade" id="apiKeyModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content card-dark">
+            <div class="modal-header border-bottom border-secondary">
+                <h5 class="modal-title text-white">🗺️ Configure OpenMaps API Key</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('admin.update_api_keys') }}" method="POST">
+                <div class="modal-body">
+                    <p class="text-muted small mb-3">
+                        Enter your <b>OpenRouteService</b>, <b>Geoapify</b>, or <b>LocationIQ</b> API key to enable high-speed authenticated OpenStreetMap road routing and geocoding.
+                    </p>
+
+                    <div class="mb-3">
+                        <label class="form-label">OpenMaps / OpenRouteService API Key</label>
+                        <input type="text" name="openmap_key" class="form-control form-control-dark font-monospace" placeholder="e.g. 5b3ce3597851110001cf6248..." value="{{ openmap_key }}">
+                        <small class="text-muted d-block mt-1">
+                            Get a free key at <a href="https://openrouteservice.org/dev/#/signup" target="_blank" class="text-info">openrouteservice.org</a> or <a href="https://www.geoapify.com" target="_blank" class="text-info">geoapify.com</a>.
+                        </small>
+                    </div>
+
+                    <div class="p-2 rounded bg-dark small text-muted">
+                        💡 <i>Note: Even without an API key, the system automatically uses the public OpenStreetMap OSRM routing engine with zero downtime.</i>
+                    </div>
+                </div>
+                <div class="modal-footer border-top border-secondary">
+                    <button type="button" class="btn btn-outline-light btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary-custom btn-sm">Save & Activate API Key</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
