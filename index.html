@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EmergencyPass — Smart Emergency Private Vehicle Assistance System | DEFINE 4.0</title>
+    
+    <!-- Meta SEO -->
+    <meta name="description" content="EmergencyPass connects private vehicles transporting emergency patients with nearby hospital ERs, police traffic corridors, and nearby drivers safely. Official prototype for DEFINE 4.0 Hackathon.">
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-dark: #070e1b;
+            --bg-surface-1: #0d192d;
+            --bg-surface-2: #142542;
+            --bg-surface-3: #1c3258;
+            --primary-blue: #2563eb;
+            --accent-cyan: #00f0ff;
+            --accent-cyan-dim: rgba(0, 240, 255, 0.15);
+            --emergency-red: #ef4444;
+            --emergency-red-glow: rgba(239, 68, 68, 0.5);
+            --success-green: #10b981;
+            --warning-amber: #f59e0b;
+            --text-main: #ffffff;
+            --text-body: #e2e8f0;
+            --text-muted: #94a3b8;
+            --border-card: #203554;
+            --border-active: #00f0ff;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-body);
+            min-height: 100vh;
+        }
+
+        h1, h2, h3, h4, h5, h6, .brand-font {
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .mono-font {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Top Hackathon Banner */
+        .hackathon-banner {
+            background: linear-gradient(90deg, #1e1b4b 0%, #0f172a 50%, #1e1b4b 100%);
+            border-bottom: 1px solid rgba(0, 240, 255, 0.3);
+            padding: 8px 16px;
+            font-size: 0.85rem;
+        }
+
+        .navbar-custom {
+            background: rgba(13, 25, 45, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-card);
+        }
+
+        .nav-pills .nav-link {
+            color: var(--text-muted);
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .nav-pills .nav-link.active {
+            background-color: var(--accent-cyan);
+            color: #070e1b;
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+        }
+
+        .card-dark {
+            background: var(--bg-surface-1);
+            border: 1px solid var(--border-card);
+            border-radius: 14px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+        }
+
+        .card-dark-highlight {
+            border: 1px solid var(--accent-cyan);
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.15);
+        }
+
+        .metric-badge {
+            background: var(--bg-surface-2);
+            border: 1px solid var(--border-card);
+            border-radius: 10px;
+            padding: 12px 16px;
+        }
+
+        /* SOS Button & Pulsing */
+        .btn-sos {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #ff4d4d 0%, #b91c1c 100%);
+            border: 4px solid #ffffff;
+            box-shadow: 0 0 35px var(--emergency-red-glow);
+            color: white;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 900;
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            animation: pulse-red 2s infinite;
+        }
+
+        .btn-sos:hover {
+            transform: scale(1.06);
+            box-shadow: 0 0 50px rgba(239, 68, 68, 0.8);
+            color: white;
+        }
+
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 25px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        /* Map styling */
+        #map {
+            height: 520px;
+            width: 100%;
+            border-radius: 12px;
+            border: 1px solid var(--border-card);
+        }
+
+        .hospital-card {
+            background: var(--bg-surface-2);
+            border: 1px solid var(--border-card);
+            border-radius: 10px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .hospital-card:hover, .hospital-card.active {
+            border-color: var(--accent-cyan);
+            background: rgba(0, 240, 255, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .progress-bar-custom {
+            height: 10px;
+            border-radius: 5px;
+            background: var(--bg-surface-3);
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #00f0ff);
+            transition: width 0.3s ease;
+        }
+
+        .vicinity-alert-box {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid var(--emergency-red);
+            border-radius: 10px;
+            padding: 12px 16px;
+            animation: flash-border 1.5s infinite;
+        }
+
+        @keyframes flash-border {
+            0%, 100% { border-color: var(--emergency-red); }
+            50% { border-color: #ff9999; }
+        }
+
+        /* Architecture diagram nodes */
+        .arch-node {
+            background: var(--bg-surface-2);
+            border: 1px solid var(--border-card);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .arch-node.active {
+            border-color: var(--accent-cyan);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- DEFINE 4.0 Banner -->
+    <div class="hackathon-banner text-center d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-danger">HACKATHON SUBMISSION</span>
+            <span class="text-white fw-bold">DEFINE 4.0 — The World's Realest Hackathon</span>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+            <span class="text-info small"><i class="fa-solid fa-code-fork me-1"></i> Interactive Client-Side Prototype</span>
+            <a href="https://github.com/Souparnika0672/DEFINE4.0" target="_blank" class="btn btn-sm btn-outline-light py-0 px-2">
+                <i class="fa-brands fa-github me-1"></i> Source Code
+            </a>
+        </div>
+    </div>
+
+    <!-- Header & Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-custom sticky-top">
+        <div class="container-fluid px-lg-4">
+            <a class="navbar-brand d-flex align-items-center gap-2 text-white" href="#">
+                <span style="font-size: 1.5rem;">🚨</span>
+                <span class="fw-bold brand-font fs-4">Emergency<span style="color: var(--accent-cyan);">Pass</span></span>
+            </a>
+            
+            <button class="navbar-toggler btn-outline-cyan" type="button" data-bs-toggle="collapse" data-bs-target="#navContent">
+                <i class="fa-solid fa-bars text-white"></i>
+            </button>
+
+            <div class="collapse navbar-collapse justify-content-end" id="navContent">
+                <ul class="nav nav-pills gap-2 mt-3 mt-lg-0" id="mainTab" role="tablist">
+                    <li class="nav-item">
+                        <button class="nav-link active" id="driver-tab" data-bs-toggle="pill" data-bs-target="#driver-pane">
+                            <i class="fa-solid fa-car-side me-1"></i> Driver SOS & Nav
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" id="hospital-tab" data-bs-toggle="pill" data-bs-target="#hospital-pane">
+                            <i class="fa-solid fa-hospital me-1"></i> Hospital ER Command
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" id="police-tab" data-bs-toggle="pill" data-bs-target="#police-pane">
+                            <i class="fa-solid fa-shield-halved me-1"></i> Police Tactical Radar
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" id="about-tab" data-bs-toggle="pill" data-bs-target="#about-pane">
+                            <i class="fa-solid fa-circle-info me-1"></i> Pitch & Architecture
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Tabs -->
+    <div class="container-fluid px-lg-4 py-4">
+        <div class="tab-content" id="mainTabContent">
+
+            <!-- ========================================== -->
+            <!-- TAB 1: DRIVER SOS & LIVE NAVIGATION -->
+            <!-- ========================================== -->
+            <div class="tab-pane fade show active" id="driver-pane" role="tabpanel">
+                
+                <!-- Metrics Bar -->
+                <div class="row g-3 mb-3">
+                    <div class="col-6 col-md-3">
+                        <div class="metric-badge">
+                            <div class="text-muted small">CORRIDOR STATUS</div>
+                            <div class="fw-bold text-danger fs-5" id="corridor-status">PRIORITY GREEN</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="metric-badge">
+                            <div class="text-muted small">SELECTED DESTINATION</div>
+                            <div class="fw-bold text-white fs-5 text-truncate" id="dest-name">AIIMS Apex Trauma</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="metric-badge">
+                            <div class="text-muted small">ESTIMATED ETA</div>
+                            <div class="fw-bold text-info fs-5 mono-font" id="live-eta">6 mins (2.4 km)</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="metric-badge">
+                            <div class="text-muted small">VICINITY WARNINGS</div>
+                            <div class="fw-bold text-warning fs-5" id="vicinity-count">Active (800m Radius)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-4">
+                    <!-- Left Column: Controls & Hospital Selector -->
+                    <div class="col-lg-4">
+                        
+                        <!-- SOS Trigger Card -->
+                        <div class="card-dark p-4 text-center mb-3">
+                            <div class="badge bg-danger-subtle text-danger mb-2 px-3 py-1 rounded-pill fw-bold">EMERGENCY SOS PORTAL</div>
+                            <h4 class="text-white mb-3">Vehicle SOS Dispatch</h4>
+                            
+                            <div class="my-3">
+                                <button class="btn-sos" id="sos-btn" onclick="toggleEmergencySOS()">
+                                    <span class="fs-2">SOS</span>
+                                    <span class="small fw-normal" id="sos-btn-label">ACTIVE</span>
+                                </button>
+                            </div>
+
+                            <p class="text-muted small mb-2">Tap to toggle emergency transit mode. Hospital ER and nearby traffic authorities are alerted immediately.</p>
+                            
+                            <div class="d-flex justify-content-center gap-2 mt-2">
+                                <button class="btn btn-sm btn-outline-warning" onclick="playSirenSound()">
+                                    <i class="fa-solid fa-volume-high me-1"></i> Test Audio Chime
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Hospital Selection Card -->
+                        <div class="card-dark p-3 mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="text-white fw-bold mb-0"><i class="fa-solid fa-hospital-user text-info me-1"></i> Nearby ER Facilities</h6>
+                                <span class="badge bg-primary">4 Available</span>
+                            </div>
+                            <div class="d-flex flex-column gap-2" id="hospital-list">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- Simulation Runner Controls -->
+                        <div class="card-dark p-3">
+                            <h6 class="text-white fw-bold mb-2"><i class="fa-solid fa-gauge-high text-warning me-1"></i> Transit Simulation Runner</h6>
+                            <p class="text-muted small mb-2">Simulate real-time vehicle movement along the route:</p>
+                            
+                            <div class="d-flex gap-2 mb-3">
+                                <button class="btn btn-primary flex-grow-1" id="btn-start-sim" onclick="startSim()">
+                                    <i class="fa-solid fa-play me-1"></i> Start Run
+                                </button>
+                                <button class="btn btn-outline-secondary" onclick="pauseSim()">
+                                    <i class="fa-solid fa-pause"></i>
+                                </button>
+                                <button class="btn btn-outline-danger" onclick="resetSim()">
+                                    <i class="fa-solid fa-rotate-left"></i>
+                                </button>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center mb-1 text-muted small">
+                                <span>Transit Progress:</span>
+                                <span class="text-white mono-font" id="sim-progress-text">0%</span>
+                            </div>
+                            <div class="progress-bar-custom mb-3">
+                                <div class="progress-bar-fill" id="sim-progress-bar" style="width: 0%;"></div>
+                            </div>
+
+                            <div class="d-flex align-items-center justify-content-between text-muted small">
+                                <span>Speed Multiplier:</span>
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-secondary active" onclick="setSpeed(1, this)">1x</button>
+                                    <button class="btn btn-outline-secondary" onclick="setSpeed(2.5, this)">2.5x</button>
+                                    <button class="btn btn-outline-secondary" onclick="setSpeed(5, this)">5x</button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Right Column: Interactive Map & Vicinity Alert -->
+                    <div class="col-lg-8">
+                        <div class="card-dark p-3 mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge bg-success"><i class="fa-solid fa-satellite-dish me-1"></i> GPS LOCKED</span>
+                                    <span class="text-white small fw-bold">South Delhi Medical Corridor (Ring Road)</span>
+                                </div>
+                                <span class="text-muted small mono-font" id="telemetry-speed">Speed: 42 km/h</span>
+                            </div>
+
+                            <!-- Leaflet Map Container -->
+                            <div id="map"></div>
+                        </div>
+
+                        <!-- Vicinity Driver Alert Simulation Box -->
+                        <div class="vicinity-alert-box d-flex align-items-center justify-content-between flex-wrap gap-2">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="fs-2 text-danger"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                                <div>
+                                    <div class="fw-bold text-white">VICINITY MOTORIST BROADCAST (DEMO SIMULATION)</div>
+                                    <div class="text-muted small">
+                                        Surrounding drivers within 800m receive this alert: 
+                                        <span class="text-warning fw-semibold">"Emergency vehicle KA-01-EQ-9842 approaching. Please yield the right lane."</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <span class="badge bg-danger text-uppercase px-3 py-2">Yield Alert Active</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ========================================== -->
+            <!-- TAB 2: HOSPITAL ER COMMAND CENTER -->
+            <!-- ========================================== -->
+            <div class="tab-pane fade" id="hospital-pane" role="tabpanel">
+                <div class="row g-4">
+                    <div class="col-lg-8">
+                        <div class="card-dark p-4 mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <h4 class="text-white mb-1"><i class="fa-solid fa-truck-medical text-danger me-2"></i> Incoming Emergency ER Queue</h4>
+                                    <p class="text-muted small mb-0">Pre-hospital triage reception desk at <b>AIIMS Apex Trauma Center</b></p>
+                                </div>
+                                <span class="badge bg-danger fs-6 px-3 py-2">1 EN ROUTE</span>
+                            </div>
+
+                            <!-- Incoming Emergency Card -->
+                            <div class="p-3 rounded mb-3" style="background: var(--bg-surface-2); border: 1px solid var(--emergency-red);">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <span class="badge bg-danger mb-1">CODE RED — SEVERE TRAUMA</span>
+                                        <h5 class="text-white mb-0">Private Vehicle: KA-01-EQ-9842 (Toyota Innova Crysta)</h5>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="text-muted small">ESTIMATED ARRIVAL</div>
+                                        <div class="fs-4 text-warning fw-bold mono-font" id="er-eta-badge">6 mins</div>
+                                    </div>
+                                </div>
+
+                                <div class="row g-3 py-2 text-muted small">
+                                    <div class="col-md-4">
+                                        <span class="text-white fw-bold">Patient Condition:</span> Acute Trauma & Chest Pain
+                                    </div>
+                                    <div class="col-md-4">
+                                        <span class="text-white fw-bold">Reported Vitals:</span> HR 115, SpO2 92%
+                                    </div>
+                                    <div class="col-md-4">
+                                        <span class="text-white fw-bold">Driver / Attendant:</span> Souparnika S. (+91 98765 43210)
+                                    </div>
+                                </div>
+
+                                <hr style="border-color: var(--border-card);">
+
+                                <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between">
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-sm btn-outline-success" id="btn-bay-ready" onclick="prepareBay()">
+                                            <i class="fa-solid fa-bed-pulse me-1"></i> <span id="bay-label">Prep Resuscitation Bay 1</span>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-info" id="btn-page-doc" onclick="pageDoctor()">
+                                            <i class="fa-solid fa-user-doctor me-1"></i> <span id="doc-label">Page On-Duty Trauma Surgeon</span>
+                                        </button>
+                                    </div>
+                                    <span class="badge bg-success-subtle text-success py-2 px-3 fw-bold" id="ack-status">
+                                        <i class="fa-solid fa-check-double me-1"></i> ER Desk Acknowledged
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ER Bay Readiness Checklist -->
+                        <div class="card-dark p-4">
+                            <h5 class="text-white mb-3">Pre-Arrival Triage Protocol Checklist</h5>
+                            <div class="d-flex flex-column gap-2 text-muted small">
+                                <label class="d-flex align-items-center gap-2 text-white">
+                                    <input type="checkbox" checked class="form-check-input"> Emergency Trauma Resuscitation Bay cleared and sterilized
+                                </label>
+                                <label class="d-flex align-items-center gap-2 text-white">
+                                    <input type="checkbox" checked class="form-check-input"> Ventilator & Defibrillator calibrated on Standby
+                                </label>
+                                <label class="d-flex align-items-center gap-2 text-white">
+                                    <input type="checkbox" checked class="form-check-input"> 4 Units O-Negative universal blood crossmatched
+                                </label>
+                                <label class="d-flex align-items-center gap-2 text-white">
+                                    <input type="checkbox" checked class="form-check-input"> Rapid CT Scanner slot reserved in Radiology
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: ER Live Bed Capacity -->
+                    <div class="col-lg-4">
+                        <div class="card-dark p-4">
+                            <h5 class="text-white mb-3"><i class="fa-solid fa-chart-pie text-info me-2"></i> Real-Time Capacity</h5>
+                            
+                            <div class="metric-badge mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span class="text-muted small">ICU Trauma Beds</span>
+                                    <span class="text-success fw-bold">18 / 80 Available</span>
+                                </div>
+                                <div class="progress-bar-custom">
+                                    <div class="progress-bar-fill bg-success" style="width: 77%;"></div>
+                                </div>
+                            </div>
+
+                            <div class="metric-badge mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span class="text-muted small">Mechanical Ventilators</span>
+                                    <span class="text-info fw-bold">24 Active</span>
+                                </div>
+                                <div class="progress-bar-custom">
+                                    <div class="progress-bar-fill bg-info" style="width: 60%;"></div>
+                                </div>
+                            </div>
+
+                            <div class="metric-badge mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span class="text-muted small">Emergency Resuscitation Bays</span>
+                                    <span class="text-warning fw-bold">2 / 6 Open</span>
+                                </div>
+                                <div class="progress-bar-custom">
+                                    <div class="progress-bar-fill bg-warning" style="width: 66%;"></div>
+                                </div>
+                            </div>
+
+                            <div class="alert alert-info py-2 small mb-0">
+                                <i class="fa-solid fa-bell me-1"></i> Live data updates every 5s from hospital database.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- TAB 3: POLICE TACTICAL RADAR -->
+            <!-- ========================================== -->
+            <div class="tab-pane fade" id="police-pane" role="tabpanel">
+                <div class="row g-4">
+                    <div class="col-lg-8">
+                        <div class="card-dark p-4 mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <h4 class="text-white mb-1"><i class="fa-solid fa-traffic-light text-warning me-2"></i> Traffic Signal Priority Control</h4>
+                                    <p class="text-muted small mb-0">Police Command & Control Corridor Automation</p>
+                                </div>
+                                <span class="badge bg-success fs-6 px-3 py-2">CORRIDOR GREEN</span>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table table-dark table-hover mb-0">
+                                    <thead>
+                                        <tr class="text-muted small">
+                                            <th>Intersection Node</th>
+                                            <th>Current Signal</th>
+                                            <th>Action Status</th>
+                                            <th>Override</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="text-white fw-bold">Ring Road / Aurobindo Marg</td>
+                                            <td><span class="badge bg-success">GREEN (Extended +45s)</span></td>
+                                            <td class="text-info small">Priority Pass Cleared</td>
+                                            <td><button class="btn btn-sm btn-outline-light py-0" onclick="alert('Signal overrode successfully')">Hold</button></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-white fw-bold">AIIMS Flyover Underpass</td>
+                                            <td><span class="badge bg-success">GREEN (Priority)</span></td>
+                                            <td class="text-info small">Traffic Diverted Southbound</td>
+                                            <td><button class="btn btn-sm btn-outline-light py-0" onclick="alert('Signal overrode successfully')">Hold</button></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-white fw-bold">Safdarjung Hospital North Gate</td>
+                                            <td><span class="badge bg-warning text-dark">AUTO-CYCLE</span></td>
+                                            <td class="text-muted small">Standby for ETA &lt; 2 min</td>
+                                            <td><button class="btn btn-sm btn-outline-light py-0" onclick="alert('Signal cleared')">Clear</button></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Anti-Abuse & Audit Log -->
+                        <div class="card-dark p-4">
+                            <h5 class="text-white mb-3"><i class="fa-solid fa-fingerprint text-info me-2"></i> Misuse Prevention & Audit Verification</h5>
+                            <div class="row g-3 text-muted small">
+                                <div class="col-md-6">
+                                    <div class="p-3 rounded" style="background: var(--bg-surface-2);">
+                                        <div class="text-white fw-bold mb-1">Aadhaar & DigiLocker Verification</div>
+                                        <div>Owner: <b>Souparnika S.</b> (Verified Citizen)</div>
+                                        <div>Registration: <b>KA-01-EQ-9842</b> (Valid RC & Insurance)</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="p-3 rounded" style="background: var(--bg-surface-2);">
+                                        <div class="text-white fw-bold mb-1">GPS Route Compliance Check</div>
+                                        <div>Deviation Score: <b class="text-success">0.0% (Strictly following route)</b></div>
+                                        <div>Speed Anomaly: <b class="text-success">Normal Transit Range</b></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Active Transits -->
+                    <div class="col-lg-4">
+                        <div class="card-dark p-4">
+                            <h5 class="text-white mb-3">City Transit Radar</h5>
+                            <div class="p-3 rounded mb-2" style="background: var(--bg-surface-2); border-left: 4px solid var(--emergency-red);">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="fw-bold text-white">KA-01-EQ-9842</span>
+                                    <span class="badge bg-danger">IN TRANSIT</span>
+                                </div>
+                                <div class="text-muted small mt-1">Destination: AIIMS Trauma Center</div>
+                                <div class="text-info small mono-font mt-1">Route: Ring Road Arterial</div>
+                            </div>
+
+                            <div class="p-3 rounded mb-2" style="background: var(--bg-surface-2); opacity: 0.6;">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="fw-bold text-white">DL-04-AB-1290</span>
+                                    <span class="badge bg-success">COMPLETED</span>
+                                </div>
+                                <div class="text-muted small mt-1">Safdarjung Hospital • Safe Arrival</div>
+                            </div>
+
+                            <div class="alert alert-secondary py-2 small mt-3 mb-0">
+                                <i class="fa-solid fa-shield me-1"></i> All transit logs are immutably signed for judicial & legal review.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- TAB 4: DEFINE 4.0 PITCH & ARCHITECTURE -->
+            <!-- ========================================== -->
+            <div class="tab-pane fade" id="about-pane" role="tabpanel">
+                <div class="card-dark p-4 mb-4">
+                    <div class="row align-items-center g-4">
+                        <div class="col-lg-8">
+                            <div class="badge bg-primary-subtle text-primary mb-2 px-3 py-1 rounded-pill fw-bold">DEFINE 4.0 HACKATHON PROJECT</div>
+                            <h2 class="text-white fw-bold mb-3">EmergencyPass: Smart Emergency Private Vehicle Assistance System</h2>
+                            <p class="text-muted lead mb-3">
+                                Over <b>150,000 trauma fatalities</b> occur annually in India due to delays in the critical "Golden Hour". Over 40% of emergency patients are rushed to hospitals not in ambulances, but in private cars or taxis — stuck in gridlock without priority, with no hospital pre-warning, and without legal green corridors.
+                            </p>
+                            <p class="text-body mb-4">
+                                <b>EmergencyPass</b> bridges this gap with an intelligent end-to-end multi-stakeholder ecosystem:
+                            </p>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="p-3 rounded" style="background: var(--bg-surface-2); border: 1px solid var(--border-card);">
+                                        <h6 class="text-info fw-bold mb-1">🚨 1-Tap SOS Activation</h6>
+                                        <p class="text-muted small mb-0">Captures high-precision GPS, selects closest trauma facility based on live ICU capacity, and initiates routing.</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="p-3 rounded" style="background: var(--bg-surface-2); border: 1px solid var(--border-card);">
+                                        <h6 class="text-danger fw-bold mb-1">🏥 Hospital Pre-Arrival Notification</h6>
+                                        <p class="text-muted small mb-0">ER triage rooms receive incoming vehicle telemetry and live countdown, preparing resuscitation bays in advance.</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="p-3 rounded" style="background: var(--bg-surface-2); border: 1px solid var(--border-card);">
+                                        <h6 class="text-warning fw-bold mb-1">🚗 Road Vicinity Alert Radar</h6>
+                                        <p class="text-muted small mb-0">Surrounding motorists within an 800m corridor receive audible yield warnings to safely clear lanes.</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="p-3 rounded" style="background: var(--bg-surface-2); border: 1px solid var(--border-card);">
+                                        <h6 class="text-success fw-bold mb-1">👮 Police & Anti-Abuse Audit</h6>
+                                        <p class="text-muted small mb-0">DigiLocker vehicle authentication, AI route deviation tracking, and immutable audit logs prevent misuse.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 text-center">
+                            <div class="p-4 rounded" style="background: radial-gradient(circle, #1e1b4b 0%, var(--bg-surface-1) 100%); border: 1px solid var(--border-card);">
+                                <div class="fs-1 mb-2">🏆</div>
+                                <h4 class="text-white fw-bold mb-2">DEFINE 4.0 Track</h4>
+                                <div class="badge bg-info text-dark fs-6 mb-3">Healthcare & Civic Tech</div>
+                                <div class="text-muted small mb-3">Built with Python Flask, Socket.IO, Leaflet, OSRM, SQLite, and Bootstrap 5.</div>
+                                <a href="https://github.com/Souparnika0672/DEFINE4.0" target="_blank" class="btn btn-outline-info w-100">
+                                    <i class="fa-brands fa-github me-1"></i> Inspect GitHub Repository
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Technical Architecture Block -->
+                <div class="card-dark p-4">
+                    <h4 class="text-white mb-3">System Architecture & Data Flow</h4>
+                    <div class="row g-3 text-center">
+                        <div class="col-md-3">
+                            <div class="arch-node active">
+                                <div class="fs-3 text-danger"><i class="fa-solid fa-mobile-screen"></i></div>
+                                <div class="text-white fw-bold mt-2">Citizen Driver App</div>
+                                <div class="text-muted small">Leaflet GPS Telemetry & OSRM Engine</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="arch-node active">
+                                <div class="fs-3 text-info"><i class="fa-solid fa-server"></i></div>
+                                <div class="text-white fw-bold mt-2">Flask WebSocket Hub</div>
+                                <div class="text-muted small">Real-time room routing & Haversine index</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="arch-node active">
+                                <div class="fs-3 text-success"><i class="fa-solid fa-hospital"></i></div>
+                                <div class="text-white fw-bold mt-2">Hospital ER Portal</div>
+                                <div class="text-muted small">Triage preparation & Web Audio chimes</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="arch-node active">
+                                <div class="fs-3 text-warning"><i class="fa-solid fa-shield"></i></div>
+                                <div class="text-white fw-bold mt-2">Police Radar & Audit</div>
+                                <div class="text-muted small">Corridor clearing & misuse verification</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Bootstrap Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <!-- Interactive Simulator Application Script -->
+    <script>
+        // -------------------------------------------------------------
+        // Pan-India Curated Hospital Dataset
+        // -------------------------------------------------------------
+        const HOSPITALS = [
+            {
+                id: 1,
+                name: 'AIIMS Apex Trauma Center',
+                lat: 28.5672,
+                lng: 77.2100,
+                distKm: 2.4,
+                traumaLevel: 'Level 1 Apex Trauma Center',
+                icuBeds: '18 / 80 Available',
+                phone: '+91 11 2658 8700'
+            },
+            {
+                id: 2,
+                name: 'Safdarjung Hospital',
+                lat: 28.5705,
+                lng: 77.2075,
+                distKm: 3.1,
+                traumaLevel: 'Level 1 Trauma Center',
+                icuBeds: '12 / 65 Available',
+                phone: '+91 11 2616 5060'
+            },
+            {
+                id: 3,
+                name: 'Max Super Speciality Hospital Saket',
+                lat: 28.5284,
+                lng: 77.2132,
+                distKm: 5.4,
+                traumaLevel: 'Level 2 Cardiac & Trauma',
+                icuBeds: '9 / 45 Available',
+                phone: '+91 11 2651 5050'
+            },
+            {
+                id: 4,
+                name: 'Fortis Escorts Heart Institute',
+                lat: 28.5604,
+                lng: 77.2762,
+                distKm: 6.2,
+                traumaLevel: 'Apex Cardiac Resuscitation',
+                icuBeds: '14 / 50 Available',
+                phone: '+91 11 4713 5000'
+            }
+        ];
+
+        // Driver Origin Location (South Delhi Ring Road)
+        const DRIVER_ORIGIN = [28.5480, 77.2250];
+
+        // State Variables
+        let selectedHospital = HOSPITALS[0];
+        let map = null;
+        let routePolyline = null;
+        let driverMarker = null;
+        let vicinityCircle = null;
+        let hospitalMarkers = [];
+        let simulationInterval = null;
+        let simProgress = 0;
+        let simSpeed = 1.0;
+        let currentRouteCoords = [];
+
+        // Web Audio Synthesizer (No external sound file required)
+        let audioCtx = null;
+        function getAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            return audioCtx;
+        }
+
+        function playSirenSound() {
+            try {
+                const ctx = getAudioContext();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                
+                // Siren pitch bend
+                const now = ctx.currentTime;
+                osc.frequency.setValueAtTime(800, now);
+                osc.frequency.exponentialRampToValueAtTime(1200, now + 0.15);
+                osc.frequency.exponentialRampToValueAtTime(800, now + 0.3);
+
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            } catch (e) {
+                console.log('Audio error:', e);
+            }
+        }
+
+        // Initialize Map
+        function initMap() {
+            map = L.map('map').setView([28.5580, 77.2180], 13);
+
+            // Dark Mode Tile Layer
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; OpenStreetMap &copy; CARTO',
+                maxZoom: 19
+            }).addTo(map);
+
+            // Add Driver Marker
+            const carIcon = L.divIcon({
+                className: 'custom-car-icon',
+                html: '<div style="background:#ef4444; border:2px solid #fff; border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; box-shadow:0 0 15px #ef4444; font-size:16px;">🚗</div>',
+                iconSize: [32, 32],
+                iconAnchor: [16, 16]
+            });
+
+            driverMarker = L.marker(DRIVER_ORIGIN, { icon: carIcon }).addTo(map);
+            driverMarker.bindPopup('<b>Your Emergency Vehicle</b><br>KA-01-EQ-9842 (In Transit)');
+
+            // Alert Perimeter Circle (800m vicinity)
+            vicinityCircle = L.circle(DRIVER_ORIGIN, {
+                color: '#ef4444',
+                fillColor: '#ef4444',
+                fillOpacity: 0.12,
+                radius: 800
+            }).addTo(map);
+
+            // Add Hospitals
+            HOSPITALS.forEach(h => {
+                const hospIcon = L.divIcon({
+                    className: 'custom-hosp-icon',
+                    html: `<div style="background:#2563eb; border:2px solid #fff; border-radius:8px; width:30px; height:30px; display:flex; align-items:center; justify-content:center; box-shadow:0 0 10px #2563eb; font-size:15px; color:#fff;">🏥</div>`,
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 15]
+                });
+
+                const m = L.marker([h.lat, h.lng], { icon: hospIcon }).addTo(map);
+                m.bindPopup(`<b>${h.name}</b><br>${h.traumaLevel}<br>ICU Beds: ${h.icuBeds}`);
+                hospitalMarkers.push(m);
+            });
+
+            // Populate Hospital List in UI
+            renderHospitalList();
+
+            // Calculate and display route to default hospital
+            updateRoute(selectedHospital);
+        }
+
+        // Render Hospital List
+        function renderHospitalList() {
+            const container = document.getElementById('hospital-list');
+            container.innerHTML = '';
+
+            HOSPITALS.forEach(h => {
+                const isSel = h.id === selectedHospital.id;
+                const card = document.createElement('div');
+                card.className = `hospital-card ${isSel ? 'active' : ''}`;
+                card.onclick = () => selectHospital(h);
+                card.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="text-white fw-bold small">${h.name}</div>
+                            <div class="text-muted" style="font-size:0.75rem;">${h.traumaLevel}</div>
+                        </div>
+                        <span class="badge ${isSel ? 'bg-info text-dark' : 'bg-dark text-info'}">${h.distKm} km</span>
+                    </div>
+                    <div class="d-flex justify-content-between mt-2 pt-1 border-top border-secondary-subtle" style="font-size:0.72rem;">
+                        <span class="text-success"><i class="fa-solid fa-bed me-1"></i>${h.icuBeds}</span>
+                        <span class="text-muted"><i class="fa-solid fa-phone me-1"></i>${h.phone}</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function selectHospital(h) {
+            selectedHospital = h;
+            document.getElementById('dest-name').innerText = h.name;
+            renderHospitalList();
+            resetSim();
+            updateRoute(h);
+        }
+
+        // Compute Waypoints and Draw Route
+        function updateRoute(hosp) {
+            if (routePolyline) {
+                map.removeLayer(routePolyline);
+            }
+
+            // Generate realistic intermediate route coordinates
+            const startLat = DRIVER_ORIGIN[0];
+            const startLng = DRIVER_ORIGIN[1];
+            const endLat = hosp.lat;
+            const endLng = hosp.lng;
+
+            // Intermediate curves simulating city grid
+            const midLat1 = startLat + (endLat - startLat) * 0.35 + 0.003;
+            const midLng1 = startLng + (endLng - startLng) * 0.35 - 0.002;
+            const midLat2 = startLat + (endLat - startLat) * 0.70 - 0.002;
+            const midLng2 = startLng + (endLng - startLng) * 0.70 + 0.001;
+
+            // Interpolate 100 high-fidelity route points
+            currentRouteCoords = [];
+            const keyPoints = [
+                [startLat, startLng],
+                [midLat1, midLng1],
+                [midLat2, midLng2],
+                [endLat, endLng]
+            ];
+
+            for (let i = 0; i < keyPoints.length - 1; i++) {
+                const p1 = keyPoints[i];
+                const p2 = keyPoints[i + 1];
+                const steps = 35;
+                for (let j = 0; j <= steps; j++) {
+                    const t = j / steps;
+                    currentRouteCoords.push([
+                        p1[0] + (p2[0] - p1[0]) * t,
+                        p1[1] + (p2[1] - p1[1]) * t
+                    ]);
+                }
+            }
+
+            // Draw Route Polyline
+            routePolyline = L.polyline(currentRouteCoords, {
+                color: '#00f0ff',
+                weight: 5,
+                opacity: 0.85,
+                dashArray: '8, 8'
+            }).addTo(map);
+
+            map.fitBounds(routePolyline.getBounds(), { padding: [40, 40] });
+        }
+
+        // Simulation Controls
+        function startSim() {
+            if (simulationInterval) clearInterval(simulationInterval);
+            
+            document.getElementById('btn-start-sim').innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Running...';
+            document.getElementById('btn-start-sim').classList.replace('btn-primary', 'btn-warning');
+
+            playSirenSound();
+
+            const totalSteps = currentRouteCoords.length;
+            const intervalMs = Math.max(80, 250 / simSpeed);
+
+            simulationInterval = setInterval(() => {
+                simProgress += 1;
+                if (simProgress >= totalSteps) {
+                    simProgress = totalSteps - 1;
+                    clearInterval(simulationInterval);
+                    onSimArrival();
+                    return;
+                }
+
+                const currentCoord = currentRouteCoords[simProgress];
+                driverMarker.setLatLng(currentCoord);
+                vicinityCircle.setLatLng(currentCoord);
+
+                const percent = Math.round((simProgress / totalSteps) * 100);
+                document.getElementById('sim-progress-bar').style.width = percent + '%';
+                document.getElementById('sim-progress-text').innerText = percent + '%';
+
+                // Update Telemetry
+                const distLeft = (selectedHospital.distKm * (1 - simProgress / totalSteps)).toFixed(1);
+                const etaMin = Math.max(1, Math.round(distLeft * 2.2));
+                document.getElementById('live-eta').innerText = `${etaMin} mins (${distLeft} km)`;
+                document.getElementById('er-eta-badge').innerText = `${etaMin} mins`;
+                document.getElementById('telemetry-speed').innerText = `Speed: ${Math.round(38 + Math.random() * 8)} km/h`;
+
+            }, intervalMs);
+        }
+
+        function pauseSim() {
+            if (simulationInterval) {
+                clearInterval(simulationInterval);
+                document.getElementById('btn-start-sim').innerHTML = '<i class="fa-solid fa-play me-1"></i> Resume';
+                document.getElementById('btn-start-sim').classList.replace('btn-warning', 'btn-primary');
+            }
+        }
+
+        function resetSim() {
+            pauseSim();
+            simProgress = 0;
+            document.getElementById('sim-progress-bar').style.width = '0%';
+            document.getElementById('sim-progress-text').innerText = '0%';
+            driverMarker.setLatLng(DRIVER_ORIGIN);
+            vicinityCircle.setLatLng(DRIVER_ORIGIN);
+            document.getElementById('live-eta').innerText = `6 mins (${selectedHospital.distKm} km)`;
+            document.getElementById('er-eta-badge').innerText = '6 mins';
+            document.getElementById('btn-start-sim').innerHTML = '<i class="fa-solid fa-play me-1"></i> Start Run';
+            document.getElementById('btn-start-sim').classList.replace('btn-warning', 'btn-primary');
+        }
+
+        function setSpeed(speed, btn) {
+            simSpeed = speed;
+            document.querySelectorAll('.btn-group .btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            if (simulationInterval) {
+                startSim();
+            }
+        }
+
+        function onSimArrival() {
+            playSirenSound();
+            document.getElementById('live-eta').innerText = 'ARRIVED AT ER';
+            document.getElementById('er-eta-badge').innerText = '0 min (ARRIVED)';
+            document.getElementById('corridor-status').innerText = 'COMPLETED';
+            document.getElementById('corridor-status').classList.replace('text-danger', 'text-success');
+            document.getElementById('btn-start-sim').innerHTML = '<i class="fa-solid fa-check me-1"></i> Arrived';
+            alert(`🎉 SIMULATION COMPLETE: Private vehicle KA-01-EQ-9842 has safely arrived at ${selectedHospital.name} Trauma ER!`);
+        }
+
+        function toggleEmergencySOS() {
+            playSirenSound();
+            const label = document.getElementById('sos-btn-label');
+            const status = document.getElementById('corridor-status');
+            if (label.innerText === 'ACTIVE') {
+                label.innerText = 'PAUSED';
+                status.innerText = 'STANDBY';
+                status.className = 'fw-bold text-muted fs-5';
+            } else {
+                label.innerText = 'ACTIVE';
+                status.innerText = 'PRIORITY GREEN';
+                status.className = 'fw-bold text-danger fs-5';
+            }
+        }
+
+        // Hospital Actions
+        function prepareBay() {
+            const lbl = document.getElementById('bay-label');
+            const btn = document.getElementById('btn-bay-ready');
+            lbl.innerText = 'Bay 1 Ready & Staffed';
+            btn.className = 'btn btn-sm btn-success';
+            playSirenSound();
+        }
+
+        function pageDoctor() {
+            const lbl = document.getElementById('doc-label');
+            const btn = document.getElementById('btn-page-doc');
+            lbl.innerText = 'Trauma Team Paged (3 Online)';
+            btn.className = 'btn btn-sm btn-info text-white';
+            playSirenSound();
+        }
+
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            initMap();
+        });
+    </script>
+</body>
+</html>
